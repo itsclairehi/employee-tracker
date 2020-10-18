@@ -1,6 +1,7 @@
 // get the client
 const mysql = require('mysql2');
 const inquirer = require('inquirer');
+// const viewAll = require('./utils/Query')
 
 
 // create the connection to database
@@ -18,6 +19,24 @@ connection.connect(err => {
     menu();
 });
 
+//function to view full table
+const viewAll = (table) => {
+
+    connection.query(
+        `SELECT * FROM ${table}`, [], (error, result) => {
+            if (error) throw error;
+            console.log("-----------------");
+            console.table(result)
+        }
+    )
+    menu()
+}
+
+const addData = () =>{
+
+    
+}
+
 const menu = () => {
     inquirer.prompt([
         {
@@ -30,15 +49,15 @@ const menu = () => {
         .then(userChoice => {
             switch (userChoice.action) {
                 case "view all departments":
-                    viewDepartments()
+                    viewAll("department")
                     break;
 
                 case "view all roles":
-                    viewRoles()
+                    viewAll("role");
                     break;
 
                 case "view all employees":
-                    viewEmployees()
+                    viewAll("employee");
                     break;
 
                 case "add a department":
@@ -66,45 +85,6 @@ const menu = () => {
                 //     makePage(data)
             }
         })
-
-}
-
-const viewDepartments = () => {
-
-    const query = connection.query(
-        `SELECT * FROM department`, [], (error, result) => {
-            if (error) throw error;
-            console.table(result)
-        }
-    )
-
-    menu()
-}
-
-const viewRoles = () => {
-
-    const query = connection.query(
-        `SELECT * FROM role`, [], (error, result) => {
-            if (error) throw error;
-            console.table(result)
-        }
-    )
-
-    menu()
-
-}
-
-const viewEmployees = () => {
-
-    const query = connection.query(
-        `SELECT * FROM employee`, [], (error, result) => {
-            if (error) throw error;
-            console.log("-----------------");
-            console.table(result)
-        }
-    )
-
-    menu()
 
 }
 
