@@ -21,14 +21,14 @@ connection.connect(err => {
 const menu = () => {
     inquirer.prompt([
         {
-            type: 'list',
-            name: 'menu',
+            type: 'rawlist',
+            name: 'action',
             message: 'what would you like to do?',
             choices: ["view all departments", "view all roles", "view all employees", "add a department", "add a role", "add an employee", "update an employee role", "exit"]
         }
     ])
         .then(userChoice => {
-            switch (userChoice.menu) {
+            switch (userChoice.action) {
                 case "view all departments":
                     viewDepartments()
                     break;
@@ -46,15 +46,15 @@ const menu = () => {
                     break;
 
                 case "add a role":
-                    addIntern()
+                    addRole()
                     break;
 
                 case "add an employee":
-                    addIntern()
+                    addEmployee()
                     break;
 
                 case "update an employee role":
-                    addIntern()
+                    updateRole()
                     break;
 
                 case "exit":
@@ -62,8 +62,8 @@ const menu = () => {
                     break;
 
 
-                default:
-                    makePage(data)
+                // default:
+                //     makePage(data)
             }
         })
 
@@ -99,6 +99,7 @@ const viewEmployees = () => {
     const query = connection.query(
         `SELECT * FROM employee`, [], (error, result) => {
             if (error) throw error;
+            console.log("-----------------");
             console.table(result)
         }
     )
@@ -131,3 +132,90 @@ const getDepName = () => {
         })
 }
 
+const addRole = () => {
+    inquirer.prompt([
+        {
+            type: 'input',
+            name: 'roleName',
+            message: 'what role would you like to add?'
+        }
+    ])
+        .then(answer => {
+            const params = answer.depName
+            
+            const query = connection.query(
+                `INSERT INTO role (title) VALUES ('${answer.roleName}')`, [], (error, result) => {
+                    console.log("depNAme variable " + answer.roleName, "params "+params);
+                    if (error) throw error;
+                    console.table(result)
+                }
+            )
+           
+
+            menu()
+        })
+}
+//make blanket add function then plug in diff queries, tables etc.!!
+const addEmployee = () => {
+    inquirer.prompt([
+        {
+            type: 'input',
+            name: 'firstName',
+            message: "what is employee's first name?"
+        },
+        {
+            type: 'input',
+            name: 'lastName',
+            message: "what is employee's last name?"
+        }
+    ])
+        .then(answer => {
+            const params = answer.depName
+            
+            const query = connection.query(
+                `INSERT INTO employee (first_name, last_name) VALUES ('${answer.firstName}', '${answer.lastName}')`, [], (error, result) => {
+                    console.log("depNAme variable " + answer.employeeName, "params "+params);
+                    if (error) throw error;
+                    
+                    
+                    console.table(result)
+                }
+            )
+           
+
+            menu()
+        })
+}
+
+const updateRole = () => {
+    inquirer.prompt([
+        {
+            type: 'input',
+            name: 'name',
+            message: "what is employee's first and last name?"
+        },
+        {
+            type: 'input',
+            name: 'role',
+            message: "what is the updated role?"
+        }
+    ])
+        .then(answer => {
+            const params = answer.depName
+
+            const newRoleId =connection.query(
+                `SELECT FROM role WHERE title = ${answer.role}`
+            )
+            
+            const query = connection.query(
+                `UPDATE employee SET ? WHERE ?`, [{role_id: newRoleId}, {first_name: answer.name[0]}], (error, result) => {
+                    console.log("depNAme variable " + answer.employeeName, "params "+params);
+                    if (error) throw error;
+                    console.table(result)
+                }
+            )
+           
+
+            menu()
+        })
+}
