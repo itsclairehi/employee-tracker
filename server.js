@@ -19,19 +19,6 @@ connection.connect(err => {
     menu();
 });
 
-//function to view full table
-// const viewAll = (table) => {
-
-//     connection.query(
-//         `SELECT * FROM ${table}`, [], (error, result) => {
-//             if (error) throw error;
-//             console.log("-----------------");
-//             console.table(result)
-//         }
-//     )
-//     menu()
-// }
-
 const viewAll = (query) => {
 
     connection.query(
@@ -44,41 +31,29 @@ const viewAll = (query) => {
     menu()
 }
 
-const viewRoles = (table) => {
+// const addData = (table, params) => {
+//     inquirer.prompt([
+//         {
+//             type: 'input',
+//             name: 'newData',
+//             message: `what ${table} would you like to add?`
+//         }
+//     ])
+//         .then(answer => {
 
-    connection.query(
-        "SELECT * FROM role JOIN department ON department.id = role.department_id ", [], (error, result) => {
-            if (error) throw error;
-            console.log("-----------------");
-            console.table(result)
-        }
-    )
-    menu()
-}
+//             // allParams = [params,answer.newData]
 
-const addData = (table, params) => {
-    inquirer.prompt([
-        {
-            type: 'input',
-            name: 'newData',
-            message: `what ${table} would you like to add?`
-        }
-    ])
-        .then(answer => {
+//             const query = connection.query(
+//                 `INSERT INTO ${table} SET ?`, `{ ${params}: ${answer.newData} } `, (error, result) => {
 
-            // allParams = [params,answer.newData]
+//                     if (error) throw error;
+//                     // console.table(result)
+//                     menu()
+//                 }
+//             )
+//         })
 
-            const query = connection.query(
-                `INSERT INTO ${table} SET ?`, `{ ${params}: ${answer.newData} } `, (error, result) => {
-
-                    if (error) throw error;
-                    // console.table(result)
-                    menu()
-                }
-            )
-        })
-
-}
+// }
 
 const menu = () => {
     inquirer.prompt([
@@ -127,10 +102,6 @@ const menu = () => {
                 case "exit":
                     connection.end()
                     break;
-
-
-                // default:
-                //     makePage(data)
             }
         })
 
@@ -197,7 +168,7 @@ const addRole = () => {
                     },
                     (error, result) => {
                         if (error) throw error;
-                        console.table(result)
+                        console.log("added new department!")
                         menu()
                     }
                 )
@@ -206,65 +177,55 @@ const addRole = () => {
 }
 
 const addEmployee = () => {
+    connection.query("SELECT role.title, role.id FROM role", function (err, roleResult) {
 
-    inquirer.prompt([
-        {
-            type: 'input',
-            name: 'firstName',
-            message: "what is employee's first name?"
-        },
-        {
-            type: 'input',
-            name: 'lastName',
-            message: "what is employee's last name?"
-        },
-        {
-            type: 'list',
-            name: 'role',
-            message: "what is employee's role?",
-            choices: depResult.map((department) => {
-                return {
-                    name: department.name,
-                    value: department.id
-                }
-            })
-        },
-        {
-            type: 'list',
-            name: 'department',
-            message: 'what department do they work in?',
-            choices: depResult.map((department) => {
-                return {
-                    name: department.name,
-                    value: department.id
-                }
-            })
-        },
-        {
-            type: 'input',
-            name: 'manager',
-            message: "who is the employee's manager?"
-        }
-    ])
-        .then(answer => {
-            roleId = connection.query(
-                `SELECT id FROM role WHERE title=${answer.role}`
-            )
 
-            const query = connection.query(
-                "INSERT INTO employee SET ?",
-                {
-                    first_name: answer.firstName,
-                    last_name: answer.lastName,
-                    role_id: roleId,
-                    manager_id: 4
-                },
-                [], (error, result) => {
-                    if (error) throw error;
-                    menu()
-                }
-            )
-        })
+
+        inquirer.prompt([
+            {
+                type: 'input',
+                name: 'firstName',
+                message: "what is employee's first name?"
+            },
+            {
+                type: 'input',
+                name: 'lastName',
+                message: "what is employee's last name?"
+            },
+            {
+                type: 'list',
+                name: 'role',
+                message: "what is employee's role?",
+                choices: roleResult.map((role) => {
+                    return {
+                        name: role.title,
+                        value: role.id
+                    }
+                })
+            }
+        ])
+            .then(answer => {
+
+                connection.query(
+                    "INSERT INTO employee SET ? ",
+                    {
+                        first_name: answer.firstName,
+                        last_name: answer.lastName,
+                        role_id: answer.role
+                    },
+                    (error, result) => {
+                        if (error) throw error;
+                        console.log(`
+                        -------------------
+                          added employee!
+                        -------------------
+                        `);
+
+                        menu()
+                    }
+                )
+            })
+    })
 }
 
 const updateRole = () => {
