@@ -1,9 +1,22 @@
--- INSERT INTO employee (first_name,
---   last_name )
---   VALUES ('Helena', 'Bonham-Carter'),
---   ('Georgie', 'Porgie'),
---   ('Selena', 'Gomez');
+INSERT INTO department (name)
+  VALUES ('Legal'),
+  ('Sales'),
+  ('Marketing'),
+  ('Engineering');
 
-  INSERT INTO department (name, id)
-  VALUES ('test', id),
-  ('test2', id);
+
+  INSERT INTO role (title, salary, department_id)
+  VALUES ('manager', 100000,  1),
+  ('sales asssociate', 70000,  2),
+  ('lawyer', 250000,  3),
+  ('slogan guru', 120000,  4),
+  ('developer', 90000000,  4);
+
+INSERT INTO employee (first_name,
+  last_name, role_id, manager_id)
+  VALUES ('Helena', 'Bonham-Carter', 1, 1),
+  ('Georgie', 'Porgie', 1, 1),
+  ('Selena', 'Gomez', 2, 1),
+  ('Darrel', 'Doohickey', 3, 1),
+  ('Prudence', 'Clearwater', 4, 1),
+  ('Stella', 'Folger', 5, 1);

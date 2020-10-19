@@ -20,10 +20,22 @@ connection.connect(err => {
 });
 
 //function to view full table
-const viewAll = (table) => {
+// const viewAll = (table) => {
+
+//     connection.query(
+//         `SELECT * FROM ${table}`, [], (error, result) => {
+//             if (error) throw error;
+//             console.log("-----------------");
+//             console.table(result)
+//         }
+//     )
+//     menu()
+// }
+
+const viewAll = (query) => {
 
     connection.query(
-        `SELECT * FROM ${table}`, [], (error, result) => {
+        query, [], (error, result) => {
             if (error) throw error;
             console.log("-----------------");
             console.table(result)
@@ -32,9 +44,40 @@ const viewAll = (table) => {
     menu()
 }
 
-const addData = () =>{
+const viewRoles = (table) => {
 
-    
+    connection.query(
+        "SELECT * FROM role JOIN department ON department.id = role.department_id ", [], (error, result) => {
+            if (error) throw error;
+            console.log("-----------------");
+            console.table(result)
+        }
+    )
+    menu()
+}
+
+const addData = (table, params) => {
+    inquirer.prompt([
+        {
+            type: 'input',
+            name: 'newData',
+            message: `what ${table} would you like to add?`
+        }
+    ])
+        .then(answer => {
+
+            // allParams = [params,answer.newData]
+
+            const query = connection.query(
+                `INSERT INTO ${table} SET ?`, `{ ${params}: ${answer.newData} } `, (error, result) => {
+
+                    if (error) throw error;
+                    // console.table(result)
+                    menu()
+                }
+            )
+        })
+
 }
 
 const menu = () => {
@@ -49,19 +92,24 @@ const menu = () => {
         .then(userChoice => {
             switch (userChoice.action) {
                 case "view all departments":
-                    viewAll("department")
+                    query = "SELECT * FROM department"
+                    viewAll(query)
                     break;
 
                 case "view all roles":
-                    viewAll("role");
+                    query = "SELECT * FROM role JOIN department ON department.id = role.department_id "
+                    viewAll(query);
+                    // viewRoles()
                     break;
 
                 case "view all employees":
-                    viewAll("employee");
+                    query = "SELECT * FROM employee LEFT JOIN role ON role.id = employee.role_id"
+                    viewAll(query);
                     break;
 
                 case "add a department":
                     getDepName()
+                    // addData("department", 'name' )
                     break;
 
                 case "add a role":
@@ -88,6 +136,8 @@ const menu = () => {
 
 }
 
+
+
 const getDepName = () => {
     inquirer.prompt([
         {
@@ -97,46 +147,66 @@ const getDepName = () => {
         }
     ])
         .then(answer => {
-            const params = answer.depName
-            
-            const query = connection.query(
-                `INSERT INTO department (name) VALUES ('${answer.depName}')`, [], (error, result) => {
-                    console.log("depNAme variable " + answer.depName, "params "+params);
+            connection.query(
+                "INSERT INTO department SET ? ", { name: answer.depName }, (error, result) => {
+
                     if (error) throw error;
-                    console.table(result)
+                    console.log(answer.depName + " added to departments!")
+                    menu()
                 }
             )
-           
-
-            menu()
         })
 }
 
 const addRole = () => {
-    inquirer.prompt([
-        {
-            type: 'input',
-            name: 'roleName',
-            message: 'what role would you like to add?'
-        }
-    ])
-        .then(answer => {
-            const params = answer.depName
-            
-            const query = connection.query(
-                `INSERT INTO role (title) VALUES ('${answer.roleName}')`, [], (error, result) => {
-                    console.log("depNAme variable " + answer.roleName, "params "+params);
-                    if (error) throw error;
-                    console.table(result)
-                }
-            )
-           
+    connection.query("SELECT department.name, department.id FROM department", function (err, depResult) {
 
-            menu()
-        })
+
+        inquirer.prompt([
+            {
+                type: 'input',
+                name: 'roleName',
+                message: 'what role would you like to add?'
+            },
+            {
+                type: 'input',
+                name: 'salary',
+                message: 'what is the salary?'
+            },
+            {
+                type: 'list',
+                name: 'department',
+                message: 'what is the department?',
+                choices: depResult.map((department) => {
+                    return {
+                        name: department.name,
+                        value: department.id
+                    }
+                })
+            }
+        ])
+            .then(answer => {
+
+                const query = connection.query(
+                    "INSERT INTO role SET ? ",
+                    {
+                        title: answer.roleName,
+                        salary: answer.salary,
+                        department_id: answer.department
+
+                    },
+                    (error, result) => {
+                        if (error) throw error;
+                        console.table(result)
+                        menu()
+                    }
+                )
+            })
+    })
 }
-//make blanket add function then plug in diff queries, tables etc.!!
+
 const addEmployee = () => {
+
     inquirer.prompt([
         {
             type: 'input',
@@ -147,23 +217,53 @@ const addEmployee = () => {
             type: 'input',
             name: 'lastName',
             message: "what is employee's last name?"
+        },
+        {
+            type: 'list',
+            name: 'role',
+            message: "what is employee's role?",
+            choices: depResult.map((department) => {
+                return {
+                    name: department.name,
+                    value: department.id
+                }
+            })
+        },
+        {
+            type: 'list',
+            name: 'department',
+            message: 'what department do they work in?',
+            choices: depResult.map((department) => {
+                return {
+                    name: department.name,
+                    value: department.id
+                }
+            })
+        },
+        {
+            type: 'input',
+            name: 'manager',
+            message: "who is the employee's manager?"
         }
     ])
         .then(answer => {
-            const params = answer.depName
-            
+            roleId = connection.query(
+                `SELECT id FROM role WHERE title=${answer.role}`
+            )
+
             const query = connection.query(
-                `INSERT INTO employee (first_name, last_name) VALUES ('${answer.firstName}', '${answer.lastName}')`, [], (error, result) => {
-                    console.log("depNAme variable " + answer.employeeName, "params "+params);
+                "INSERT INTO employee SET ?",
+                {
+                    first_name: answer.firstName,
+                    last_name: answer.lastName,
+                    role_id: roleId,
+                    manager_id: 4
+                },
+                [], (error, result) => {
                     if (error) throw error;
-                    
-                    
-                    console.table(result)
+                    menu()
                 }
             )
-           
-
-            menu()
         })
 }
 
@@ -171,8 +271,13 @@ const updateRole = () => {
     inquirer.prompt([
         {
             type: 'input',
-            name: 'name',
-            message: "what is employee's first and last name?"
+            name: 'firstName',
+            message: "what is employee's first name?"
+        },
+        {
+            type: 'input',
+            name: 'lastName',
+            message: "what is employee's last name?"
         },
         {
             type: 'input',
@@ -183,18 +288,18 @@ const updateRole = () => {
         .then(answer => {
             const params = answer.depName
 
-            const newRoleId =connection.query(
+            const newRoleId = connection.query(
                 `SELECT FROM role WHERE title = ${answer.role}`
             )
-            
+
             const query = connection.query(
-                `UPDATE employee SET ? WHERE ?`, [{role_id: newRoleId}, {first_name: answer.name[0]}], (error, result) => {
-                    console.log("depNAme variable " + answer.employeeName, "params "+params);
+                `UPDATE employee SET ? WHERE ?`, [{ role_id: newRoleId }, { first_name: answer.name[0] }], (error, result) => {
+                    console.log("depNAme variable " + answer.employeeName, "params " + params);
                     if (error) throw error;
                     console.table(result)
                 }
             )
-           
+
 
             menu()
         })
