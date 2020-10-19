@@ -19,17 +19,7 @@ connection.connect(err => {
     menu();
 });
 
-const viewAll = (query) => {
 
-    connection.query(
-        query, [], (error, result) => {
-            if (error) throw error;
-            console.log("-----------------");
-            console.table(result)
-        }
-    )
-    menu()
-}
 
 // const addData = (table, params) => {
 //     inquirer.prompt([
@@ -58,7 +48,7 @@ const viewAll = (query) => {
 const menu = () => {
     inquirer.prompt([
         {
-            type: 'rawlist',
+            type: 'list',
             name: 'action',
             message: 'what would you like to do?',
             choices: ["view all departments", "view all roles", "view all employees", "add a department", "add a role", "add an employee", "update an employee role", "exit"]
@@ -72,19 +62,18 @@ const menu = () => {
                     break;
 
                 case "view all roles":
-                    query = "SELECT * FROM role JOIN department ON department.id = role.department_id "
+                    query = "SELECT * FROM role JOIN department ON department.department_id = role.department_id "
                     viewAll(query);
-                    // viewRoles()
                     break;
 
                 case "view all employees":
-                    query = "SELECT * FROM employee LEFT JOIN role ON role.id = employee.role_id"
+                    //employee.id AS employeeID, employee.first_name, employee.last_name, employee.manager_id, employee.role_id
+                    query = "SELECT * FROM employee LEFT JOIN role ON employee.role_id = role.role_id JOIN department ON role.department_id = department.department_id "
                     viewAll(query);
                     break;
 
                 case "add a department":
-                    getDepName()
-                    // addData("department", 'name' )
+                    addDepartment()
                     break;
 
                 case "add a role":
@@ -95,7 +84,7 @@ const menu = () => {
                     addEmployee()
                     break;
 
-                case "update an employee role":
+                case "update an employee's role":
                     updateRole()
                     break;
 
@@ -107,9 +96,20 @@ const menu = () => {
 
 }
 
+const viewAll = (query) => {
+
+    connection.query(
+        query, [], (error, result) => {
+            if (error) throw error;
+            console.log("-----------------");
+            console.table(result)
+        }
+    )
+    menu()
+}
 
 
-const getDepName = () => {
+const addDepartment = () => {
     inquirer.prompt([
         {
             type: 'input',
@@ -130,7 +130,7 @@ const getDepName = () => {
 }
 
 const addRole = () => {
-    connection.query("SELECT department.name, department.id FROM department", function (err, depResult) {
+    connection.query("SELECT department.name, department.department_id FROM department", function (err, depResult) {
 
 
         inquirer.prompt([
@@ -168,7 +168,10 @@ const addRole = () => {
                     },
                     (error, result) => {
                         if (error) throw error;
-                        console.log("added new department!")
+                        console.log(`                        
+                        --------------------
+                          added ${answer.roleName} to roles!
+                        --------------------`)
                         menu()
                     }
                 )
@@ -177,9 +180,9 @@ const addRole = () => {
 }
 
 const addEmployee = () => {
-    connection.query("SELECT role.title, role.id FROM role", function (err, roleResult) {
+    connection.query("SELECT role.title, role.role_id FROM role", function (err, roleResult) {
 
-
+        connection.query("SELECT employee.first_name, employee.last_name, employee.id FROM employee WHERE employee.role_id=1", function (err, managerRes) {
 
         inquirer.prompt([
             {
@@ -199,7 +202,18 @@ const addEmployee = () => {
                 choices: roleResult.map((role) => {
                     return {
                         name: role.title,
-                        value: role.id
+                        value: role.role_id
+                    }
+                })
+            },
+            {
+                type: 'list',
+                name: 'manager',
+                message: "who is employee's manager?",
+                choices: managerRes.map((manager) => {
+                    return {
+                        name: manager.first_name + " " + manager.last_name,
+                        value: manager.id
                     }
                 })
             }
@@ -211,14 +225,15 @@ const addEmployee = () => {
                     {
                         first_name: answer.firstName,
                         last_name: answer.lastName,
-                        role_id: answer.role
+                        role_id: answer.role,
+                        manager_id: answer.manager 
                     },
                     (error, result) => {
                         if (error) throw error;
                         console.log(`
-                        -------------------
-                          added employee!
-                        -------------------
+                        -------------------------
+                          added ${answer.firstName} ${answer.lastName} to employees!
+                        -------------------------
                         `);
 
                         menu()
@@ -226,42 +241,54 @@ const addEmployee = () => {
                 )
             })
     })
+})
 }
 
 const updateRole = () => {
-    inquirer.prompt([
-        {
-            type: 'input',
-            name: 'firstName',
-            message: "what is employee's first name?"
-        },
-        {
-            type: 'input',
-            name: 'lastName',
-            message: "what is employee's last name?"
-        },
-        {
-            type: 'input',
-            name: 'role',
-            message: "what is the updated role?"
-        }
-    ])
-        .then(answer => {
-            const params = answer.depName
+    connection.query("SELECT employee.first_name, employee.last_name, employee.id FROM employee", function (err, empResult) {
 
-            const newRoleId = connection.query(
-                `SELECT FROM role WHERE title = ${answer.role}`
-            )
+        connection.query("SELECT role.title, role.id FROM role", function (err, roleResult) {
 
-            const query = connection.query(
-                `UPDATE employee SET ? WHERE ?`, [{ role_id: newRoleId }, { first_name: answer.name[0] }], (error, result) => {
-                    console.log("depNAme variable " + answer.employeeName, "params " + params);
-                    if (error) throw error;
-                    console.table(result)
+            inquirer.prompt([
+                {
+                    type: 'list',
+                    name: 'employeeId',
+                    message: "which employee would you like to update?",
+                    choices: empResult.map((employee) => {
+                        return {
+                            name: employee.first_name + " " + employee.last_name,
+                            value: employee.id
+                        }
+                    })
+                },
+                {
+                    type: 'list',
+                    name: 'role',
+                    message: "what is the updated role?",
+                    choices: roleResult.map((role) => {
+                        return {
+                            name: role.title,
+                            value: role.id
+                        }
+                    })
                 }
-            )
+            ])
+                .then(answer => {
 
+                    connection.query(
+                        `UPDATE employee SET role_id = ? WHERE id = ?`, [answer.role, answer.employeeId],
+                        (error, result) => {
+                            if (error) throw error;
+                            console.log(`
+                    ------------
+                    updated role!
+                    ------------
+                    `)
+                            menu()
+                        }
+                    )
 
-            menu()
+                })
         })
+    })
 }
