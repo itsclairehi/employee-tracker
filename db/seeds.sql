@@ -8,8 +8,8 @@ INSERT INTO department (name)
   INSERT INTO role (title, salary, department_id)
   VALUES ('manager', 100000,  1),
   ('sales asssociate', 70000,  2),
-  ('lawyer', 250000,  3),
-  ('slogan guru', 120000,  4),
+  ('lawyer', 250000,  1),
+  ('slogan guru', 120000,  3),
   ('developer', 90000000,  4);
 
 INSERT INTO employee (first_name,

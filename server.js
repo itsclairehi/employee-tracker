@@ -1,7 +1,6 @@
 // get the client
 const mysql = require('mysql2');
 const inquirer = require('inquirer');
-// const viewAll = require('./utils/Query')
 
 
 // create the connection to database
@@ -20,38 +19,13 @@ connection.connect(err => {
 });
 
 
-
-// const addData = (table, params) => {
-//     inquirer.prompt([
-//         {
-//             type: 'input',
-//             name: 'newData',
-//             message: `what ${table} would you like to add?`
-//         }
-//     ])
-//         .then(answer => {
-
-//             // allParams = [params,answer.newData]
-
-//             const query = connection.query(
-//                 `INSERT INTO ${table} SET ?`, `{ ${params}: ${answer.newData} } `, (error, result) => {
-
-//                     if (error) throw error;
-//                     // console.table(result)
-//                     menu()
-//                 }
-//             )
-//         })
-
-// }
-
 const menu = () => {
     inquirer.prompt([
         {
             type: 'list',
             name: 'action',
             message: 'what would you like to do?',
-            choices: ["view all departments", "view all roles", "view all employees", "add a department", "add a role", "add an employee", "update an employee role", "exit"]
+            choices: ["view all departments", "view all roles", "view all employees", "add a department", "add a role", "add an employee", "update an employee's role", "exit"]
         }
     ])
         .then(userChoice => {
@@ -67,7 +41,7 @@ const menu = () => {
                     break;
 
                 case "view all employees":
-                    query = "SELECT * FROM employee LEFT JOIN role ON employee.role_id = role.role_id JOIN department ON role.department_id = department.department_id "
+                    query = "SELECT * FROM employee LEFT JOIN role ON employee.role_id = role.role_id JOIN department ON role.department_id = department.department_id ORDER BY department.name "
                     viewAll(query);
                     break;
 
@@ -95,6 +69,7 @@ const menu = () => {
 
 }
 
+//view full table
 const viewAll = (query) => {
 
     connection.query(
@@ -150,7 +125,7 @@ const addRole = () => {
                 choices: depResult.map((department) => {
                     return {
                         name: department.name,
-                        value: department.id
+                        value: department.department_id
                     }
                 })
             }
@@ -183,112 +158,113 @@ const addEmployee = () => {
 
         connection.query("SELECT employee.first_name, employee.last_name, employee.id FROM employee WHERE employee.role_id=1", function (err, managerRes) {
 
-        inquirer.prompt([
-            {
-                type: 'input',
-                name: 'firstName',
-                message: "what is employee's first name?"
-            },
-            {
-                type: 'input',
-                name: 'lastName',
-                message: "what is employee's last name?"
-            },
-            {
-                type: 'list',
-                name: 'role',
-                message: "what is employee's role?",
-                choices: roleResult.map((role) => {
-                    return {
-                        name: role.title,
-                        value: role.role_id
-                    }
-                })
-            },
-            {
-                type: 'list',
-                name: 'manager',
-                message: "who is employee's manager?",
-                choices: managerRes.map((manager) => {
-                    return {
-                        name: manager.first_name + " " + manager.last_name,
-                        value: manager.id
-                    }
-                })
-            }
-        ])
-            .then(answer => {
+            inquirer.prompt([
+                {
+                    type: 'input',
+                    name: 'firstName',
+                    message: "what is employee's first name?"
+                },
+                {
+                    type: 'input',
+                    name: 'lastName',
+                    message: "what is employee's last name?"
+                },
+                {
+                    type: 'list',
+                    name: 'role',
+                    message: "what is employee's role?",
+                    choices: roleResult.map((role) => {
+                        return {
+                            name: role.title,
+                            value: role.role_id
+                        }
+                    })
+                },
+                {
+                    type: 'list',
+                    name: 'manager',
+                    message: "who is employee's manager?",
+                    choices: managerRes.map((manager) => {
+                        return {
+                            name: manager.first_name + " " + manager.last_name,
+                            value: manager.id
+                        }
+                    })
+                }
+            ])
+                .then(answer => {
 
-                connection.query(
-                    "INSERT INTO employee SET ? ",
-                    {
-                        first_name: answer.firstName,
-                        last_name: answer.lastName,
-                        role_id: answer.role,
-                        manager_id: answer.manager 
-                    },
-                    (error, result) => {
-                        if (error) throw error;
-                        console.log(`
+                    connection.query(
+                        "INSERT INTO employee SET ? ",
+                        {
+                            first_name: answer.firstName,
+                            last_name: answer.lastName,
+                            role_id: answer.role,
+                            manager_id: answer.manager
+                        },
+                        (error, result) => {
+                            if (error) throw error;
+                            console.log(`
                         -------------------------
                           added ${answer.firstName} ${answer.lastName} to employees!
                         -------------------------
                         `);
 
-                        menu()
-                    }
-                )
-            })
+                            menu()
+                        }
+                    )
+                })
+        })
     })
-})
 }
 
 const updateRole = () => {
+
     connection.query("SELECT * FROM employee", function (err, empResult) {
 
         connection.query("SELECT * FROM role", (err, roleResult) => {
 
-                inquirer.prompt([
-                    {
-                        type: 'list',
-                        name: 'employeeId',
-                        message: "which employee would you like to update?",
-                        choices: empResult.map((employee) => {
-                            return {
-                                name: employee.first_name + " " + employee.last_name,
-                                value: employee.id
-                            };
-                        })
-                    },
-                    {
-                        type: 'list',
-                        name: 'role',
-                        message: "what is the updated role?",
-                        choices: roleResult.map((role) => {
-                            return {
-                                name: role.title,
-                                value: role.role_id
-                            };
-                        })
-                    }
-                ])
-                    .then(answer => {
+            inquirer.prompt([
+                {
+                    type: 'list',
+                    name: 'employeeId',
+                    message: "which employee would you like to update?",
+                    choices: empResult.map((employee) => {
+                        return {
+                            name: employee.first_name + " " + employee.last_name,
+                            value: employee.id
+                        }
+                    })
+                },
+                {
+                    type: 'list',
+                    name: 'role',
+                    message: "what is the updated role?",
+                    choices: roleResult.map((role) => {
+                        return {
+                            name: role.title,
+                            value: role.role_id
+                        }
+                    })
+                }
+            ])
+                .then(answer => {
 
-                        connection.query(
-                            "UPDATE employee SET role_id = ? WHERE id = ?", [answer.role, answer.employeeId],
-                            (error, result) => {
-                                if (error)
-                                    throw error;
-                                console.log(`
+                    connection.query(
+                        "UPDATE employee SET role_id = ? WHERE id = ?", [answer.role, answer.employeeId],
+                        (error, result) => {
+                            if (error)
+                                throw error;
+                            console.log(`
                     ------------
                     updated role!
                     ------------
-                    `);
-                                menu();
-                            }
-                        );
+                    `)
+                            menu();
+                        }
+                    )
 
-                    });
-            })
+                });
+        })
     })
 }
